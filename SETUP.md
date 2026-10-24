@@ -1,94 +1,91 @@
-# Winlucks Merchant Survey — Setup & Go-Live
+# Winlucks Merchant Survey — Final Setup
 
-What's in this folder:
+**Live address:** https://survey.winlucks.com/ (hosted on GitHub Pages: WinlucksGit/winlucks-survey)
+**Dashboard:** https://survey.winlucks.com/dashboard.html
 
-| File | What it is |
-|---|---|
-| `index.html` | Public survey: 9 questions, about 1 minute, English + Arabic, gives a Founding Merchant code |
-| `dashboard.html` | Your private dashboard: totals, charts, Hot/Warm leads with WhatsApp links |
-| `apps-script/Code.gs` | Free backend: checks for bots, saves to Google Sheets, serves dashboard data |
-| `winlucks-logo.png` | **Add this yourself:** the official logo file, used as-is |
+## What's in the package
 
-Everything is free: Cloudflare (hosting + bot check) and Google Sheets (storage).
+| File | Upload to GitHub? | What it is |
+|---|---|---|
+| `index.html` | Yes | The survey: 9 questions, ~1 minute, English + Arabic, Winlucks logo built in |
+| `dashboard.html` | Yes | Private dashboard: totals, charts, Hot/Warm leads with WhatsApp links |
+| `winlucks-logo-horizontal.png` | Yes | Official horizontal logo (also embedded in `index.html`) |
+| `winlucks-logo.png` | Yes | Official stacked logo |
+| `CNAME` | Yes | Points GitHub Pages at `survey.winlucks.com` |
+| `Code.gs` | Optional (safe) | Backend code to paste into Google Apps Script |
+| `SETUP.md` | Optional | This guide |
 
----
-
-## Step 1 — Google Sheet backend (10 min)
-1. Create a Google Sheet called `Winlucks Merchant Survey` on the Winlucks Google account.
-2. **Extensions → Apps Script** → delete the sample code → paste all of `apps-script/Code.gs` → Save.
-3. **Project Settings (gear) → Script properties → Add property**:
-   - `TURNSTILE_SECRET` = your Turnstile secret key (Step 2)
-   - `DASHBOARD_KEY` = a long password only you and the sales lead know (e.g. 20 random characters)
-4. **Deploy → New deployment → type: Web app** → Execute as **Me** → Who has access **Anyone** → Deploy → authorise.
-5. Copy the **Web app URL** (ends in `/exec`).
-
-> Each time you change the code later: **Deploy → Manage deployments → Edit → Version: New version**. The URL stays the same.
-
-## Step 2 — Bot check keys (5 min)
-1. dash.cloudflare.com → sign up free → **Turnstile → Add widget**.
-2. Hostname: `survey.winlucks.com` (and `<your-project>.pages.dev` from Step 4). Mode: **Managed**.
-3. Copy the **Site key** and the **Secret key** (secret goes into Step 1.3).
-
-## Step 3 — Paste the settings
-- In `index.html`, at the top of the script: `ENDPOINT` (Web app URL), `TURNSTILE_SITE_KEY`, `PUBLIC_URL` (your final survey link).
-- In `dashboard.html`: `ENDPOINT` (same Web app URL).
-- Put `winlucks-logo.png` in the folder.
-
-## Step 4 — Publish for the public (Cloudflare Pages, 5 min)
-1. Cloudflare dashboard → **Workers & Pages → Create → Pages → Upload assets**.
-2. Project name `winlucks-survey` → drag the whole folder in (without the `apps-script` folder) → **Deploy**.
-3. You get a live link like `https://winlucks-survey.pages.dev`. It works immediately for anyone.
-4. Optional, nicer link: project → **Custom domains → Set up** → `survey.winlucks.com`. If winlucks.com's DNS is on Cloudflare this is automatic; otherwise add the CNAME record it shows at your domain provider.
-5. Test from your phone: submit once, check the Sheet, then delete your test row.
-
-**Alternative hosts** (same files, also free): Netlify Drop (drag-and-drop at app.netlify.com/drop) or GitHub Pages. Remember to add that hostname to the Turnstile widget.
-
-## Links to use
-| Who | Link |
-|---|---|
-| Merchants (general) | `https://survey.winlucks.com/` |
-| QR code on table cards | `https://survey.winlucks.com/?src=qr` |
-| WhatsApp broadcasts | `https://survey.winlucks.com/?src=whatsapp` |
-| Meta ads (if sending to the web form) | `https://survey.winlucks.com/?src=meta` |
-| Each field rep (credits their surveys) | `https://survey.winlucks.com/?rep=Ahmed` |
-| Referral (built automatically on the thank-you screen) | `...?ref=WLF-XXXXX&src=referral` |
-| Your dashboard | `https://survey.winlucks.com/dashboard.html` → enter the DASHBOARD_KEY |
-
-The dashboard only shows data after the key is entered; the key is checked by the Google Sheet backend, not the page. Don't share the dashboard key with merchants.
-
-## What merchants see after submitting
-- Their **Founding Merchant code** (e.g. `WLF-7K2QX`), a Copy button and **Share with another shop** on WhatsApp (with their referral code built in).
-- "What UAE merchants told us so far": totals and percentages only, no names or numbers. Hidden until 20 surveys are in.
-- If the same mobile number submits again, it isn't saved twice; they just see their existing code.
-
-## How bots are stopped
-Cloudflare Turnstile (checked again on the server) · hidden honeypot field · at least 15 seconds to complete · real taps/typing required · automated-browser detection · UAE mobile format · one survey per mobile number · max 80 submissions per 10 minutes. Blocked attempts are listed in the **Rejected** tab and counted on the dashboard.
-
-For most people Turnstile is invisible or one tap, so it doesn't stop real merchants from filling it.
+**Status today:** the survey runs in *preview mode* (answers are not saved) and the dashboard shows *sample data* until steps 1–4 are done.
 
 ---
 
-## Meta Instant Form (same 9 questions)
-**Form type:** Higher intent. **Privacy policy:** link to the Winlucks privacy policy page.
-**Intro headline:** `Boost your customers and online presence with Winlucks`
-**Intro description (choose "List" layout):**
-- Winlucks is a UAE app that helps local shops get new customers and bring them back
-- Get discovered by nearby customers, promote your offers, sell online without a website
-- Shoppers earn rewards and WL Coins when they buy from you
-- Free registration for Founding Merchants: answer and get your code (2 months free at launch + featured badge)
+## Step 1 — Google Sheet backend (stores the answers)
+1. sheets.google.com → new sheet `Winlucks Merchant Survey` (Winlucks Google account).
+2. **Extensions → Apps Script** → delete sample code → paste all of `Code.gs` → **Save**.
+3. **Deploy → New deployment → Web app** → Execute as **Me** → Who has access **Anyone** → **Deploy** → allow access.
+4. Copy the **Web app URL** (ends in `/exec`).
 
-Prefill fields: **Full name**, **Phone number**, **Company name** (label: Business name)
-Custom questions (multiple choice):
-1. Business type — Restaurant / Café · Grocery / Minimart · Salon / Barbershop · Laundry · Car wash / Auto · Fashion / Beauty · Electronics / Mobile · Other · **I don't run a business** (→ conditional logic to a separate "This survey is for business owners" ending)
-2. Emirate — the 7 emirates
-3. Biggest challenge today — same 7 options as the web form
-4. Do you pay commission to delivery apps or marketplaces? — Yes, and it's worth it · Yes, but it's too expensive · No
-5. What would make you try Winlucks? — same 6 options
-6. Which payment model do you prefer? — same 4 options
-7. Would you like to join Winlucks as a merchant? — Yes · Maybe — need more info · Not now · No
+Answers will appear in the **Responses** tab. Blocked bot attempts go to **Rejected**.
 
-That is 10 questions in total, within Meta's 15-question limit.
+## Step 2 — Cloudflare Turnstile (bot check, free)
+1. dash.cloudflare.com → **Turnstile → Add widget**, mode **Managed**.
+2. Hostnames: `survey.winlucks.com` and `winlucksgit.github.io`.
+3. Copy the **Site key** (public) and **Secret key** (private).
 
-**Completion screen:** `Thank you! Our team will WhatsApp you your Founding Merchant code within 24 hours.` (Meta forms can't show a generated code, so the team sends it. Add the lead to the Sheet with source `meta` and give it a code.)
+## Step 3 — Secret settings in Apps Script
+**Project Settings (gear) → Script properties → Add**:
+- `TURNSTILE_SECRET` = Turnstile secret key
+- `DASHBOARD_KEY` = a long password for the dashboard (share only with your sales lead)
 
-**Junk filter for Meta leads:** drop "I don't run a business", non-UAE mobile numbers, duplicates and obvious test names. Confirm every remaining lead by WhatsApp before counting it.
+Never put these two in GitHub or in chat.
+
+## Step 4 — Connect the pages
+Edit on GitHub (open the file → pencil icon → **Commit changes**):
+- `index.html`: `ENDPOINT` = Web app URL, `TURNSTILE_SITE_KEY` = Site key
+- `dashboard.html`: `ENDPOINT` = Web app URL
+
+Or send Claude the Web app URL and Site key and upload the two files it returns.
+
+**Test:** submit once from your phone → check the Sheet → open the dashboard with your key → delete the test row.
+
+> Changed `Code.gs` later? Apps Script → **Deploy → Manage deployments → Edit → New version**. The URL stays the same.
+
+---
+
+## Custom domain (survey.winlucks.com)
+1. GitHub repo → **Settings → Pages** → Custom domain `survey.winlucks.com` → Save (the `CNAME` file does this too).
+2. At the winlucks.com DNS provider add: **CNAME** · name `survey` · value `winlucksgit.github.io`.
+3. Wait for the DNS check to pass (minutes to a few hours), then tick **Enforce HTTPS**.
+
+If Pages shows 404: Settings → Pages → Source **Deploy from a branch**, `main`, `/ (root)`, **Save**; verify the account email at github.com/settings/emails; check the **Actions** tab for a green "pages build and deployment".
+
+---
+
+## Links to share
+| Use | Link |
+|---|---|
+| General / bio | `https://survey.winlucks.com/` |
+| QR codes | `https://survey.winlucks.com/?src=qr` |
+| WhatsApp | `https://survey.winlucks.com/?src=whatsapp` |
+| Meta ads | `https://survey.winlucks.com/?src=meta` |
+| Each field rep | `https://survey.winlucks.com/?rep=Ahmed` |
+| Dashboard | `https://survey.winlucks.com/dashboard.html` (enter DASHBOARD_KEY) |
+
+Referral links (`?ref=WLF-XXXXX`) are created automatically on the thank-you screen.
+
+## What merchants get
+Free registration as a Founding Merchant: a code (e.g. `WLF-7K2QX`), 2 months free at launch, featured badge, free setup help, plus a WhatsApp share button with their referral code. The same mobile number can't submit twice; it just shows their existing code.
+
+## Bot protection
+Turnstile (re-checked on the server) · hidden honeypot · minimum 15 seconds · real taps/typing · automated-browser check · UAE mobile format · one survey per mobile · max 80 per 10 minutes. Confirm Hot leads by WhatsApp before counting them.
+
+---
+
+## Meta Instant Form (same questions)
+Form type **Higher intent** · privacy policy link required.
+**Headline:** Boost your customers and online presence with Winlucks
+**Intro (list):** UAE app that brings local customers to your shop · get discovered, promote offers, sell online without a website · shoppers earn rewards and WL Coins · free registration for Founding Merchants (2 months free + featured badge)
+**Prefill:** Full name, Phone number, Company name
+**Questions:** 1 Business type (+ "I don't run a business" → separate ending) · 2 Emirate · 3 Biggest challenge · 4 Pay platform commission? · 5 What would make you try Winlucks? · 6 Preferred payment model · 7 Join Winlucks as a merchant?
+**Completion:** "Thank you! Our team will WhatsApp you your Founding Merchant code within 24 hours."
+Filter out non-business, non-UAE numbers and duplicates; confirm leads by WhatsApp.
