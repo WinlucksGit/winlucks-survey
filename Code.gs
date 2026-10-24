@@ -43,7 +43,9 @@ function doPost(e) {
   cache.put("burst", String(burst), 600);
   if (burst > MAX_PER_10_MIN) reasons.push("rate_limited");
 
-  if (!reasons.length && !verifyTurnstile(p.turnstileToken)) reasons.push("turnstile_failed");
+  // Turnstile is checked only once TURNSTILE_SECRET is set in Script properties
+  const tsSecret = PropertiesService.getScriptProperties().getProperty("TURNSTILE_SECRET");
+  if (!reasons.length && tsSecret && !verifyTurnstile(p.turnstileToken)) reasons.push("turnstile_failed");
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);

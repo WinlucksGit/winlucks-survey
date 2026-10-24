@@ -166,7 +166,8 @@ const ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 const TURNSTILE_SITE_KEY = "PASTE_YOUR_TURNSTILE_SITE_KEY_HERE";
 const PUBLIC_URL = "https://survey.winlucks.com/";      // the link merchants share
 const MIN_SECONDS = 15;
-const CONFIGURED = ENDPOINT.indexOf("PASTE") !== 0 && TURNSTILE_SITE_KEY.indexOf("PASTE") !== 0;                                   // 9 questions: a person needs at least this long
+const CONFIGURED = ENDPOINT.indexOf("PASTE") !== 0;
+const USE_TURNSTILE = TURNSTILE_SITE_KEY.indexOf("PASTE") !== 0 && TURNSTILE_SITE_KEY.length > 10;                                   // 9 questions: a person needs at least this long
 /* ============================================== */
 
 const params = new URLSearchParams(location.search);
@@ -258,7 +259,7 @@ function render(){
     <div class="status" id="status" role="status" aria-live="polite"></div>`;
   form.innerHTML = h;
   restore(keep);
-  if(window.turnstile && TURNSTILE_SITE_KEY.indexOf("PASTE")<0) mountTs();
+  if(window.turnstile && USE_TURNSTILE) mountTs();
 }
 function snapshot(){ const o={}; form.querySelectorAll("input").forEach(i=>{ if(i.type==="radio"||i.type==="checkbox"){ if(i.checked) o[i.id]=true; } else if(i.value) o[i.id]=i.value; }); return o; }
 function restore(o){ Object.entries(o).forEach(([id,v])=>{ const el=document.getElementById(id); if(!el) return; if(v===true) el.checked=true; else el.value=v; }); }
@@ -277,7 +278,7 @@ function mountTs(){
   tsWidget = turnstile.render(el,{sitekey:TURNSTILE_SITE_KEY,theme:"auto",language:lang,action:"merchant_survey",
     callback:t=>{tsToken=t;}, "expired-callback":()=>{tsToken="";}, "error-callback":()=>{tsToken="";}});
 }
-window.wlTurnstileReady = () => { if(TURNSTILE_SITE_KEY.indexOf("PASTE")<0) mountTs(); };
+window.wlTurnstileReady = () => { if(USE_TURNSTILE) mountTs(); };
 
 /* ---------- validation ---------- */
 const val = k => { const c=form.querySelector(`[name="${k}"]:checked`); if(c) return c.value; const e=form.querySelector(`[name="${k}"]`); return e && e.type!=="radio" ? e.value.trim() : ""; };
@@ -308,7 +309,7 @@ form.addEventListener("submit",async e=>{
   if(document.getElementById("company_website").value){ showDone("WLF-"+Math.random().toString(36).slice(2,7).toUpperCase(),null); return; } // honeypot: fake success
   if(CONFIGURED && (navigator.webdriver || elapsed<MIN_SECONDS || human.pointer+human.keys<5)){ setStatus(t.fast,true); return; }
   if(!CONFIGURED){ showDone("WLF-PREVIEW", null); setPreviewNote(); return; }
-  if(!tsToken){ setStatus(t.tsErr,true); return; }
+  if(USE_TURNSTILE && !tsToken){ setStatus(t.tsErr,true); return; }
 
   const answers={}; ["business_name","category","emirate","area","biggest_challenge","pays_commission","try_trigger","payment_model","interest_joining","contact_person","mobile"].forEach(k=>answers[k]=val(k));
   const payload={answers,source:SRC,rep:REP,referredBy:REF,lang,turnstileToken:tsToken,hp:"",elapsedSec:elapsed,signals:human};
