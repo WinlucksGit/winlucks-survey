@@ -7,6 +7,7 @@
 <title>Merchant Survey Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* Layout: KPI strip → daily responses → answer breakdowns grid → lead list */
 :root{
@@ -30,6 +31,17 @@ header small{display:block;opacity:.85;font-weight:600}
 .hbtns{display:flex;gap:8px;flex-wrap:wrap}
 .hbtns button{font:800 13px/1 var(--body);border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:rgba(255,255,255,.16);color:#fff}
 .hbtns button.gold{background:var(--gold);color:#2B1A00}
+.hbtns button.danger{background:#B42318;color:#fff}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(20,12,32,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--card);color:var(--ink);border-radius:16px;max-width:440px;width:100%;padding:22px;display:grid;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal-box h2{font:800 20px/1.2 var(--display);margin:0;color:#B42318}
+.modal-box p{margin:0;font-size:14px}
+.modal-box input{font:inherit;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-actions button{font:800 14px/1 var(--body);border-radius:10px;padding:12px 16px;cursor:pointer;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+.modal-actions .go{background:#B42318;border-color:#B42318;color:#fff}
+.modal-actions .go:disabled{opacity:.45;cursor:not-allowed}
+.modal-msg{font-weight:800;font-size:13px;min-height:1.2em}
 .sheetbtn{font:800 13px/1 var(--body);border-radius:10px;padding:10px 14px;background:#1E8E4E;color:#fff;text-decoration:none;display:inline-flex;align-items:center}
 .banner{background:var(--gold);color:#2B1A00;font-weight:800;font-size:14px;padding-block:9px;text-align:center}
 main{padding-block:20px 40px}
@@ -80,11 +92,22 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 <body>
 <header class="pad"><div class="wrap">
   <div><h1>Merchant Survey Dashboard</h1><small id="updated">Winlucks · loading…</small></div>
-  <div class="hbtns"><button id="refresh" class="gold" type="button">Refresh</button><a id="sheetLink" class="sheetbtn" target="_blank" rel="noopener" hidden>Open Google Sheet</a><button id="csv" type="button">Copy leads (CSV)</button><button id="logout" type="button">Lock</button></div>
+  <div class="hbtns"><button id="refresh" class="gold" type="button">Refresh</button><a id="sheetLink" class="sheetbtn" target="_blank" rel="noopener" hidden>Open Google Sheet</a><button id="xlsx" class="gold" type="button">Download Excel</button><button id="csvdl" type="button">Download CSV</button><button id="clear" class="danger" type="button">Clear data</button><button id="logout" type="button">Lock</button></div>
 </div></header>
 <div class="banner pad" id="demo" hidden>Sample data — connect your Google Sheet (see SETUP.md) to see real responses.</div>
 
 <main class="pad"><div class="wrap" id="app"></div></main>
+<div class="modal" id="clearModal" role="dialog" aria-modal="true" aria-labelledby="clearTitle" hidden>
+  <div class="modal-box">
+    <h2 id="clearTitle">Clear all survey data?</h2>
+    <p>This empties the dashboard and the <b>Responses</b> and <b>Rejected</b> tabs. A copy is kept first in an <b>Archive</b> tab in your Google Sheet, so nothing is lost.</p>
+    <p id="clearCount" class="muted"></p>
+    <label for="clearConfirm" style="font-weight:800;font-size:14px">Type <b>CLEAR</b> to confirm</label>
+    <input id="clearConfirm" autocomplete="off" spellcheck="false">
+    <div class="modal-msg" id="clearMsg" role="status" aria-live="polite"></div>
+    <div class="modal-actions"><button type="button" id="clearCancel">Cancel</button><button type="button" class="go" id="clearGo" disabled>Clear data</button></div>
+  </div>
+</div>
 
 <script>
 /* =================== CONFIG =================== */
@@ -184,12 +207,57 @@ function table(){
 
 document.getElementById("refresh").addEventListener("click",load);
 document.getElementById("logout").addEventListener("click",()=>{ setKey(""); data=null; DEMO?load():login(); });
-document.getElementById("csv").addEventListener("click",async e=>{
+const EXPORT_COLS=[["date","Date & time"],["code","Founding Merchant code"],["lead","Lead"],["business","Business name"],["category","Business type"],["emirate","Emirate"],["area","Area"],["name","Contact name"],["mobile","Mobile / WhatsApp"],["challenge","Biggest challenge"],["commission","Pays platform commission"],["tryTrigger","What would make them try"],["payment","Preferred payment model"],["joinAnswer","Join Winlucks?"],["source","Source"],["rep","Rep"],["referredBy","Referred by"],["lang","Language"]];
+function exportRows(){
+  const rows=(data&&data.leads)||[];
+  const cols=EXPORT_COLS.filter(([k])=>rows.some(r=>r[k]!==undefined&&r[k]!==""));
+  return {cols, rows: rows.map(r=>cols.map(([k])=>r[k]??""))};
+}
+function fileStamp(){ return new Date().toISOString().slice(0,10); }
+function saveBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); }
+function flash(btn,txt){ const o=btn.textContent; btn.textContent=txt; setTimeout(()=>btn.textContent=o,1800); }
+document.getElementById("csvdl").addEventListener("click",e=>{
+  if(!data) return; const {cols,rows}=exportRows();
+  const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const csv="\uFEFF"+[cols.map(c=>esc(c[1])).join(",")].concat(rows.map(r=>r.map(esc).join(","))).join("\r\n");
+  saveBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}),`winlucks-merchant-survey-${fileStamp()}.csv`); flash(e.target,"Downloaded ✓");
+});
+document.getElementById("xlsx").addEventListener("click",e=>{
   if(!data) return;
-  const cols=["date","lead","business","category","emirate","area","name","mobile","code","source","rep","referredBy"];
-  const csv=[cols.join(",")].concat(visibleLeads().map(l=>cols.map(c=>`"${String(l[c]??"").replace(/"/g,'""')}"`).join(","))).join("\n");
-  try{ await navigator.clipboard.writeText(csv); e.target.textContent="Copied ✓"; setTimeout(()=>e.target.textContent="Copy leads (CSV)",1800); }
-  catch(_){ e.target.textContent="Copy blocked"; }
+  if(!window.XLSX){ flash(e.target,"Use Download CSV"); return; }
+  const {cols,rows}=exportRows();
+  const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c[1])].concat(rows));
+  ws["!cols"]=cols.map(([k,l])=>({wch:Math.min(40,Math.max(l.length,...rows.map(r=>String(r[cols.findIndex(c=>c[0]===k)]).length))+2)}));
+  ws["!autofilter"]={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:cols.length-1}})};
+  const sum=[["Winlucks Merchant Survey — summary"],["Exported",new Date().toLocaleString("en-GB")],[],["Surveys",data.total],["Hot leads",(data.lead||{}).Hot||0],["Warm leads",(data.lead||{}).Warm||0],["Cold",(data.lead||{}).Cold||0],["Closed",(data.lead||{}).Closed||0],["Bots blocked",data.blocked||0]];
+  const add=(t,o)=>{ sum.push([],[t,"Count"]); Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).forEach(x=>sum.push(x)); };
+  add("Biggest challenge",data.challenge); add("Pays platform commission",data.commission); add("Preferred payment model",data.payment); add("What would make them try",data.trigger); add("Business type",data.category); add("Emirate",data.emirate); add("Source",data.source);
+  const ws2=XLSX.utils.aoa_to_sheet(sum); ws2["!cols"]=[{wch:42},{wch:12}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Responses"); XLSX.utils.book_append_sheet(wb,ws2,"Summary");
+  XLSX.writeFile(wb,`winlucks-merchant-survey-${fileStamp()}.xlsx`); flash(e.target,"Downloaded ✓");
+});
+
+/* ---------- clear data ---------- */
+const cm=document.getElementById("clearModal"), ci=document.getElementById("clearConfirm"), cg=document.getElementById("clearGo"), cmsg=document.getElementById("clearMsg");
+function closeClear(){ cm.hidden=true; ci.value=""; cg.disabled=true; cmsg.textContent=""; document.getElementById("clear").focus(); }
+document.getElementById("clear").addEventListener("click",()=>{
+  if(!data) return;
+  document.getElementById("clearCount").textContent = `${data.total} survey${data.total===1?"":"s"} will be moved to the archive.`;
+  cm.hidden=false; ci.focus();
+});
+ci.addEventListener("input",()=>{ cg.disabled = ci.value.trim().toUpperCase()!=="CLEAR"; });
+document.getElementById("clearCancel").addEventListener("click",closeClear);
+cm.addEventListener("click",e=>{ if(e.target===cm) closeClear(); });
+cm.addEventListener("keydown",e=>{ if(e.key==="Escape") closeClear(); });
+cg.addEventListener("click",async()=>{
+  if(DEMO){ cmsg.textContent="Sample data can't be cleared. Connect your Google Sheet first."; return; }
+  cg.disabled=true; cmsg.style.color=""; cmsg.textContent="Clearing…";
+  try{
+    const r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"clear",key:getKey(),confirm:"CLEAR"})});
+    const j=await r.json();
+    if(j.ok){ cmsg.textContent=`Done. ${j.archived} survey${j.archived===1?"":"s"} saved in the "${j.archiveTab}" tab.`; setTimeout(()=>{ closeClear(); load(); },1600); }
+    else { cmsg.style.color="#B42318"; cmsg.textContent=j.message||"Couldn't clear the data."; cg.disabled=false; }
+  }catch(_){ cmsg.style.color="#B42318"; cmsg.textContent="No connection to the Google Sheet. Try again."; cg.disabled=false; }
 });
 
 /* ---------- sample data (only used before the ENDPOINT is set) ---------- */
