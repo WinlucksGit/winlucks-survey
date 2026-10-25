@@ -59,6 +59,13 @@ main .wrap{margin-top:-30px}
 .trust{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;font-weight:700;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 .trust > span::before{content:"✓ ";color:var(--ok)}
 .tel{user-select:all;direction:ltr;unicode-bidi:isolate}
+.phead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.faqbtn{display:inline-flex;align-items:center;gap:7px;font:800 14px/1 var(--body);color:var(--purple);background:var(--tint);border:1.5px solid var(--purple-2);border-radius:999px;padding:10px 14px;text-decoration:none;white-space:nowrap}
+.faqbtn:hover{background:var(--purple);color:#fff}
+.faqbtn:focus-visible,.btn.faq:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .faqbtn{color:var(--gold)}}
+:root[data-theme="dark"] .faqbtn{color:var(--gold)}
+.btn.faq{background:var(--tint)}
 .start{display:block;text-align:center;font:800 17px/1 var(--display);background:var(--purple);color:#fff;border-radius:12px;padding:15px;text-decoration:none}
 .start:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 18px;display:grid;gap:22px}
@@ -123,7 +130,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding-block:0 28px}
 <main class="pad">
   <div class="wrap stack">
     <section class="card pitch" id="pitch" aria-labelledby="pitchH">
-      <h2 id="pitchH" data-t="pH"></h2>
+      <div class="phead"><h2 id="pitchH" data-t="pH"></h2><a class="faqbtn" href="faq.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.2-2.4 3.6"/><path d="M12 17.2h.01"/></svg><span data-t="faq"></span></a></div>
       <p class="plead" data-t="pLead"></p>
       <ul class="benefits">
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><div><b data-t="b1"></b><span data-t="b1d"></span></div></li>
@@ -152,6 +159,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding-block:0 28px}
       <p data-t="codeHow" style="margin:0;color:var(--muted);font-size:14px"></p>
       <div class="btns">
         <button class="btn" type="button" id="copyBtn" data-t="copy"></button>
+        <a class="btn faq" href="faq.html" target="_blank" rel="noopener" data-t="faq"></a>
         <a class="btn wa" id="waBtn" target="_blank" rel="noopener" data-t="share"></a>
       </div>
       <div class="results" id="results" hidden></div>
@@ -188,7 +196,7 @@ const T = {
   shareMsg:"I just answered the 1-minute Winlucks merchant survey and got a Founding Merchant code: free registration + 2 months free at launch. Get yours: ",
   resT:"What UAE merchants told us so far",resN:"merchants answered",resChal:"Biggest challenge",resInt:"Want to join Winlucks",resCom:"Find platform commission too expensive",
   foot:"WINLUCKS L.L.C-FZ · Meydan Free Zone, Dubai · Your answers are only used to improve Winlucks merchant services.",lang:"العربية",
-  pH:"What is Winlucks?",pLead:"A UAE app that helps local shops get new customers, sell more and bring customers back.",
+  pH:"What is Winlucks?",faq:"Merchants FAQ",pLead:"A UAE app that helps local shops get new customers, sell more and bring customers back.",
   b1:"Get discovered nearby",b1d:"Your shop, products and offers appear to customers in your area, all in one app.",
   b2:"Customers come back",b2d:"Shoppers earn rewards and WL Coins when they buy from you, so they have a reason to return.",
   b3:"Promote your offers",b3d:"Run deals, giveaways and launch offers, and reach nearby customers through app notifications.",
@@ -208,7 +216,7 @@ const T = {
   shareMsg:"أجبت للتو على استبيان وينلكس للتجار (دقيقة واحدة) وحصلت على رمز التاجر المؤسس: تسجيل مجاني + شهران مجاناً عند الإطلاق. احصل على رمزك: ",
   resT:"ماذا قال لنا التجار في الإمارات حتى الآن",resN:"تاجراً أجابوا",resChal:"أكبر تحدٍ",resInt:"يرغبون بالانضمام إلى وينلكس",resCom:"يرون عمولة المنصات مرتفعة",
   foot:"وينلكس ش.ذ.م.م - منطقة حرة · المنطقة الحرة بميدان، دبي · تُستخدم إجاباتك فقط لتحسين خدمات وينلكس للتجار.",lang:"English",
-  pH:"ما هو وينلكس؟",pLead:"تطبيق إماراتي يساعد المحلات المحلية على جذب زبائن جدد، وزيادة المبيعات، وإعادة الزبائن إليها.",
+  pH:"ما هو وينلكس؟",faq:"أسئلة التجار الشائعة",pLead:"تطبيق إماراتي يساعد المحلات المحلية على جذب زبائن جدد، وزيادة المبيعات، وإعادة الزبائن إليها.",
   b1:"اجعل الزبائن القريبين يجدونك",b1d:"يظهر محلك ومنتجاتك وعروضك للزبائن في منطقتك، في تطبيق واحد.",
   b2:"زبائن يعودون إليك",b2d:"يحصل المتسوقون على مكافآت وعملات WL عند الشراء منك، فيكون لديهم سبب للعودة.",
   b3:"روّج لعروضك",b3d:"أطلق العروض والهدايا وعروض الافتتاح، وصِل إلى الزبائن القريبين عبر إشعارات التطبيق.",
